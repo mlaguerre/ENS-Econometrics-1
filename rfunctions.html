@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>R functions — Econometrics 1 — M1 Econ, ENS de Lyon</title>
+  <meta name="description" content="Useful R functions discussed in Econometrics 1, M1 Econ, ENS de Lyon, 2026–2027.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}]});"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="index.html"><span class="title">Econometrics 1</span><span class="meta">M1 Econ · ENS de Lyon · 2026–2027</span></a>
+      <nav>
+        <a href="index.html">Course</a>
+        <a href="slides.html">Lecture slides</a>
+        <a href="exercises.html">Exercises</a>
+        <a href="rfunctions.html" class="active">R functions</a>
+      </nav>
+    </div>
+  </header>
+
+  <main><div class="wrap">
+    <div class="page-head">
+      <h1>Useful R functions</h1>
+      <p>Functions discussed in class: how to use them and what they compute.</p>
+    </div>
+
+    <ul class="toc">
+      <li><a href="#stepAIC"><code>stepAIC()</code></a> <span class="pkg">MASS</span> Stepwise model selection by AIC</li>
+    </ul>
+
+    <!-- ===================== stepAIC ===================== -->
+    <article class="fn" id="stepAIC">
+      <h2><code>stepAIC()</code> <span class="pkg">MASS</span></h2>
+      <p class="lead">Stepwise model selection: starting from a fitted model, <code>stepAIC()</code> adds and/or removes covariates one at a time, as long as this lowers the Akaike Information Criterion (AIC).</p>
+
+      <h3>How to use it</h3>
+<pre><code>library(MASS)
+stepAIC(object, scope, direction = c("both", "backward", "forward"), k = 2, trace = 1)</code></pre>
+      <table class="args">
+        <tbody>
+          <tr><td><code>object</code></td><td>The starting model, e.g. a fit from <code>lm()</code>.</td></tr>
+          <tr><td><code>scope</code></td><td>The range of models to search, e.g. <code>list(lower = ~ 1, upper = ~ x1 + x2 + x3)</code>. Required for forward selection; for backward elimination the starting model is used as the upper model.</td></tr>
+          <tr><td><code>direction</code></td><td><code>"backward"</code>, <code>"forward"</code> or <code>"both"</code> (default).</td></tr>
+          <tr><td><code>k</code></td><td>Penalty per parameter: <code>k = 2</code> gives the AIC, <code>k = log(n)</code> gives the BIC.</td></tr>
+          <tr><td><code>trace</code></td><td>Print every step (<code>1</code>) or not (<code>0</code>).</td></tr>
+        </tbody>
+      </table>
+      <p>It returns the selected model (a fitted <code>lm</code> object, to be used with <code>summary()</code>, <code>predict()</code>, …). The sequence of steps is stored in <code>$anova</code>.</p>
+
+      <h3>What it computes</h3>
+      <p>For a model with \(p\) covariates, i.e. \(p + 1\) coefficients with the intercept, and maximized likelihood \(\hat{L}\), the AIC is</p>
+      $$\text{AIC} = -2 \log \hat{L} + 2(p+1).$$
+      <p>The first term rewards goodness of fit, the second penalizes complexity: <strong>lower is better</strong>. For a linear regression with Gaussian errors, <code>stepAIC()</code> uses, up to a constant,</p>
+      $$\text{AIC} = n \log\left(\frac{\text{RSS}}{n}\right) + 2(p+1), \qquad \text{RSS} = \sum_{i=1}^n \hat{\varepsilon}_i^2 .$$
+      <p>At each step, it computes the AIC of every model obtained by adding or dropping a single covariate, moves to the model with the lowest AIC, and stops when no such move lowers the AIC.</p>
+
+      <h3>Backward and forward selection</h3>
+      <ul>
+        <li><strong>Backward elimination</strong> (<code>direction = "backward"</code>): start from the full model with all candidate covariates. At each step, remove the covariate whose removal lowers the AIC the most. Stop when removing any covariate would increase the AIC.</li>
+        <li><strong>Forward selection</strong> (<code>direction = "forward"</code>): start from the intercept-only model. At each step, add the candidate covariate that lowers the AIC the most. Stop when adding any covariate would increase the AIC.</li>
+        <li><strong>Both</strong> (<code>direction = "both"</code>, the default): at each step, consider both adding and removing a covariate.</li>
+      </ul>
+      <p>These are <strong>greedy</strong> searches. With \(p\) candidate covariates there are \(2^p - 1\) possible models with at least one covariate; stepwise methods fit at most about \(p^2/2\) of them. This makes them fast, but they are not guaranteed to find the model with the lowest AIC, and backward and forward selection can end at different models, as in the example below.</p>
+
+      <h3>Example</h3>
+      <p>Log hourly wage in the <code>wage1</code> data, with \(p = 12\) candidate covariates (13 coefficients in the full model):</p>
+<pre><code>library(MASS)
+library(wooldridge)
+data("wage1")
+
+# Full model with all candidate covariates
+full = lm(lwage ~ educ + exper + expersq + tenure + female + married + nonwhite +
+            numdep + smsa + northcen + south + west, data = wage1)
+
+# Backward elimination
+back = stepAIC(full, direction = "backward", trace = FALSE)
+back$anova
+
+# Forward selection, from the intercept-only model
+null = lm(lwage ~ 1, data = wage1)
+fwd  = stepAIC(null, scope = list(lower = ~ 1, upper = formula(full)),
+               direction = "forward", trace = FALSE)
+fwd$anova</code></pre>
+      <p class="out-label">Backward elimination</p>
+<pre class="output"><code>        Step Df    Deviance Resid. Df Resid. Dev       AIC
+1                                 513   79.57286 -967.4184
+2 - nonwhite  1 0.003700833       514   79.57656 -969.3940
+3     - west  1 0.171752869       515   79.74831 -970.2599</code></pre>
+      <p class="out-label">Forward selection</p>
+<pre class="output"><code>        Step Df   Deviance Resid. Df Resid. Dev       AIC
+1                                525  148.32975 -663.8441
+2     + educ  1 27.5606288       524  120.76912 -769.9672
+3   + tenure  1 18.2020133       523  102.56711 -853.8963
+4   + female  1 11.0221309       522   91.54498 -911.6956
+5  + married  1  2.4922090       521   89.05277 -924.2139
+6     + smsa  1  2.4606249       520   86.59214 -936.9525
+7     + west  1  0.8748537       519   85.71729 -940.2937
+8    + exper  1  0.6897838       518   85.02751 -942.5437
+9  + expersq  1  4.7924705       517   80.23504 -971.0593
+10  + numdep  1  0.3393028       516   79.89573 -971.2884</code></pre>
+      <p>Backward elimination drops <code>nonwhite</code> and <code>west</code> and keeps 10 covariates. Forward selection stops at 9 covariates: it includes <code>west</code> but neither <code>northcen</code> nor <code>south</code>. The two searches end at <strong>different models</strong>, and the forward model has the lower AIC (−971.3 vs −970.3).</p>
+
+      <h3>Good to know</h3>
+      <ul>
+        <li>The values printed by <code>stepAIC()</code> differ from those of <code>AIC()</code> by a constant. This does not change the comparison between models.</li>
+        <li>The p-values and confidence intervals reported by <code>summary()</code> on the selected model ignore the selection step, so they are too optimistic.</li>
+        <li>The AIC is a criterion for prediction: a selected covariate is not necessarily a causal determinant of the outcome.</li>
+        <li>A factor is added or removed as a whole, with all its dummies at once.</li>
+      </ul>
+
+      <h3>References</h3>
+      <ul class="refs">
+        <li>H. Akaike (1974), "A new look at the statistical model identification", <em>IEEE Transactions on Automatic Control</em>, 19(6), 716–723. <a href="https://doi.org/10.1109/TAC.1974.1100705" target="_blank" rel="noopener">doi</a></li>
+        <li>G. James, D. Witten, T. Hastie and R. Tibshirani (2021), <em>An Introduction to Statistical Learning</em>, 2nd ed., Springer, Section 6.1 (subset selection, forward and backward stepwise selection). <a href="https://www.statlearning.com/" target="_blank" rel="noopener">Free online</a></li>
+      </ul>
+    </article>
+
+  </div></main>
+
+  <footer>
+    <div class="wrap">Econometrics 1 · M1 Econ · ENS de Lyon · 2026–2027 · Slides licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></div>
+  </footer>
+</body>
+</html>
