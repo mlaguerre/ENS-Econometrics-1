@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>R code, Session 2 — Econometrics 1 — M1 Econ, ENS de Lyon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/r.min.js"></script>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="../index.html"><span class="title">Econometrics 1</span><span class="meta">M1 Econ · ENS de Lyon · 2026–2027</span></a>
+      <nav>
+        <a href="../index.html">Course</a>
+        <a href="../slides.html" class="active">Lecture slides</a>
+        <a href="../exercises.html">Exercises</a>
+        <a href="../rfunctions.html">R functions</a>
+      </nav>
+    </div>
+  </header>
+
+  <main><div class="wrap">
+    <div class="page-head">
+      <h1>R code: Session 2</h1>
+      <p>Asymptotic Theory and Inference. Code used in class, in addition to the slides: illustrations of the weak law of large numbers and of the central limit theorem.</p>
+    </div>
+    <p class="code-actions">
+      <button type="button" class="copy-btn" id="copy">Copy code</button>
+      <a class="dl-btn" href="02-asymptotics-testing.R" download>Download .R file</a>
+      <a class="back" href="../slides.html">← Back to the lecture slides</a>
+    </p>
+<pre class="code-block"><code class="language-r" id="code"># WLLN illustration
+
+set.seed(123)
+
+#Normally distributed
+
+mu&lt;-0
+sd&lt;-1
+
+means&lt;-c()
+sample_sizes&lt;-seq(10,3000,by=10)
+
+for (n in sample_sizes){
+  x&lt;-rnorm(n = n, mean = mu, sd = sd)
+  means&lt;-c(means, mean(x))
+}
+
+plot(sample_sizes, means, type=&#x27;l&#x27;)
+abline(h=mu)
+
+# Uniformly distributed
+
+min&lt;-0
+max&lt;-100
+
+means&lt;-c()
+sample_sizes&lt;-seq(10,3000,by=10)
+
+for (n in sample_sizes){
+  x&lt;-runif(n = n, min = min, max = max)
+  means&lt;-c(means, mean(x))
+}
+
+plot(sample_sizes, means, type=&#x27;l&#x27;)
+abline(h=((max+min)/2))
+
+
+
+# CLT illustration
+min &lt;- 0
+max &lt;- 10
+n_rep &lt;- 1000
+sample_sizes &lt;- c(10, 100, 1000)
+
+# Simulate the sample means
+means_list &lt;- list()
+for (n in sample_sizes) {
+  means &lt;- numeric(n_rep)
+  for (b in 1:n_rep) {
+    x &lt;- runif(n = n, min = min, max = max)
+    means[b] &lt;- mean(x)
+  }
+  means_list[[as.character(n)]] &lt;- means
+}
+
+# Normal pdf mean
+mu &lt;- (min + max) / 2
+
+# One panel per sample size
+par(mfrow = c(1, length(sample_sizes)))
+
+for (i in seq_along(sample_sizes)) {
+  n      &lt;- sample_sizes[i]
+  sigma2 &lt;- (max - min)^2 / 12
+  sigma  &lt;- sqrt(sigma2)
+  
+  xlim &lt;- c(-12,12)
+  
+  h &lt;- hist(sqrt(n)*(means_list[[i]]-mu), breaks = 30, plot = FALSE)
+  ymax &lt;- max(h$density, dnorm(0, 0, sigma))
+  
+  hist(sqrt(n)*(means_list[[i]]-mu), breaks = seq(-12,12,1), freq = FALSE,
+       col = &quot;lightgreen&quot;, border = &quot;white&quot;,
+       xlim = xlim, ylim = c(0, ymax * 1.05),
+       main = paste(&quot;n =&quot;, n),
+       xlab = &quot;Sample mean&quot;, ylab = &quot;Density&quot;)
+  
+  curve(dnorm(x, mean = 0, sd = sigma),
+        add = TRUE, lwd = 2, col = &quot;red&quot;)
+  
+  legend(&quot;topright&quot;,
+         legend = c(&quot;Histogram of means&quot;, &quot;Normal pdf&quot;),
+         fill   = c(&quot;lightgreen&quot;, NA),
+         border = c(&quot;white&quot;, NA),
+         lty    = c(NA, 1),
+         lwd    = c(NA, 2),
+         col    = c(NA, &quot;red&quot;),
+         bty = &quot;n&quot;, cex = 0.8)
+}
+
+par(mfrow = c(1, 1))  # reset layout
+</code></pre>
+  </div></main>
+
+  <footer>
+    <div class="wrap">Econometrics 1 · M1 Econ · ENS de Lyon · 2026–2027 · Slides licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></div>
+  </footer>
+  <script>
+    if (window.hljs) hljs.highlightAll();
+    document.getElementById('copy').addEventListener('click', function () {
+      var btn = this;
+      navigator.clipboard.writeText(document.getElementById('code').innerText).then(function () {
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = 'Copy code'; }, 1500);
+      });
+    });
+  </script>
+</body>
+</html>
