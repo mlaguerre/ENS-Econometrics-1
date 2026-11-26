@@ -120,3 +120,15 @@ pre.code-block code.hljs { padding: 1rem 1.1rem; background: #fff; font-size: .8
   .schedule .links a { display: block; text-align: center; margin: 0 0 .3rem 0; }
   .schedule .date { white-space: normal; }
 }
+
+/* ---------- exercises page ---------- */
+.exlist { display: block; margin-top: .25rem; font-size: .85rem; color: var(--muted); }
+.schedule td.sol { white-space: nowrap; width: 7rem; }
+.schedule .soon { font-size: .85rem; font-style: italic; color: var(--muted); }
+@media (max-width: 680px) {
+  .schedule td.sol { white-space: normal; width: auto; }
+  .schedule th { letter-spacing: .02em; font-size: .72rem; }
+}
+
+.schedule.ex .links { width: 6rem; }
+.schedule.ex td.sol { width: 6.5rem; }

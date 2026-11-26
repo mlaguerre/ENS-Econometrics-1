@@ -10,6 +10,7 @@ rfunctions.html Useful R functions (one <article> per function, linked from the 
 style.css      site styling (shared by all pages)
 slides/        one HTML + one PDF per session (NN-name.html, NN-name.pdf)
 code/          R code used in class but not in the slides (NN-name.R + NN-name.html page)
+exercises/     exercise sheets (exercise-sheet-N.pdf) and, later, their solutions (exercise-sheet-N-solutions.pdf)
 .nojekyll      tells GitHub Pages to serve files as-is
 ```
 
@@ -30,3 +31,9 @@ Everything in this repository is publicly visible on the website, even though th
 1. Save the code as `code/NN-name.R`.
 2. Copy `code/02-asymptotics-testing.html`, rename it `code/NN-name.html`, and replace the title, description, file name and the code inside `<code>` (escape `<` as `&lt;` and `&` as `&amp;`).
 3. In `slides.html`, add `<a class="code" href="code/NN-name.html">Code</a>` after the PDF link of that session.
+
+## Add an exercise sheet or its solution
+
+1. Copy the PDF to `exercises/exercise-sheet-N.pdf` (solutions: `exercises/exercise-sheet-N-solutions.pdf`).
+2. In `exercises.html`, copy a row of the table for a new sheet, or replace `<span class="soon">Coming soon</span>` by
+   `<span class="links"><a href="exercises/exercise-sheet-N-solutions.pdf" target="_blank" rel="noopener">PDF</a></span>` for a solution.
