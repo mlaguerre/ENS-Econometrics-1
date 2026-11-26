@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>R code, Session 3 — Econometrics 1 — M1 Econ, ENS de Lyon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/r.min.js"></script>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="../index.html"><span class="title">Econometrics 1</span><span class="meta">M1 Econ · ENS de Lyon · 2026–2027</span></a>
+      <nav>
+        <a href="../index.html">Course</a>
+        <a href="../slides.html" class="active">Lecture slides</a>
+        <a href="../exercises.html">Exercises</a>
+        <a href="../rfunctions.html">R functions</a>
+      </nav>
+    </div>
+  </header>
+
+  <main><div class="wrap">
+    <div class="page-head">
+      <h1>R code: Session 3</h1>
+      <p>Asymptotic Theory and Inference. Code used in class, in addition to the slides: illustrations of the weak law of large numbers and of the central limit theorem.</p>
+    </div>
+    <p class="code-actions">
+      <button type="button" class="copy-btn" id="copy">Copy code</button>
+      <a class="dl-btn" href="03-asymptotics-testing.R" download>Download .R file</a>
+      <a class="back" href="../slides.html">← Back to the lecture slides</a>
+    </p>
+<pre class="code-block"><code class="language-r" id="code">#Properties of the t-test
+
+set.seed(123)
+
+rejection_frequency <- function(beta1, n=50, n_rep=1, alpha=0.05, x_params=c(0,10), eps_params=c(0,1)){
+  x_min &lt;- x_params[1]
+  x_max &lt;- x_params[2]
+  eps_mu &lt;- eps_params[1]
+  eps_sd &lt;- eps_params[2]
+  is_rejected &lt;- replicate(n_rep, {
+    x &lt;- runif(n = n, min = x_min, max = x_max)
+    eps&lt;-rnorm(n = n, mean = eps_mu, sd = eps_sd)
+    y&lt;-1+ beta1*x + eps
+    m&lt;-lm(y ~ x)
+    t&lt;-(coef(m)[&quot;x&quot;] - 0)/sqrt(vcov(m)[&quot;x&quot;, &quot;x&quot;])
+    pval &lt;-2*pt(-abs(t), df = m$df.residual)
+    pval &lt; alpha
+  }) 
+  mean(is_rejected)
+}
+
+#Size
+
+n &lt;-50
+n_rep &lt;- 1000
+beta1 &lt;- 0
+
+size &lt;- rejection_frequency(beta1, n=n, n_rep=n_rep)
+cat(&quot;Empirical size:&quot;, size, &quot;(n=50) \n&quot;)
+
+# Power
+
+n_beta &lt;-40
+beta1_list &lt;- seq(-0.2,0.2,length.out=n_beta)
+
+power &lt;- sapply(beta1_list, rejection_frequency, n=n, n_rep=n_rep)
+
+plot(beta1_list, power, type=&#x27;l&#x27;, ylab=&quot;Empirical power&quot;,
+     xlab=&quot;Beta&quot;, main=&quot;Power w.r.t. beta&quot;)
+abline(h=0.05, lty=2)
+
+# Consistency
+n_list &lt;- c(50, 100, 1000)
+
+power_mat &lt;- sapply(n_list, function(n){sapply(beta1_list, rejection_frequency, n=n, n_rep=n_rep)})
+colnames(power_mat) &lt;- paste0(&quot;n = &quot;, n_list)
+
+matplot(beta1_list,power_mat,type=&#x27;l&#x27;, 
+        col=c(&quot;darkblue&quot;, &quot;darkgreen&quot;, &quot;darkred&quot;), ylab=&quot;Empirical power&quot;,
+        xlab=&quot;Beta&quot;, lty=1, lwd=1.5,
+        main=&quot;Power w.r.t. beta and sample size&quot;)
+abline(h=0.05, lty=2)
+legend(&quot;bottomright&quot;, legend = colnames(power_mat), col = c(&quot;darkblue&quot;, &quot;darkgreen&quot;, &quot;darkred&quot;), lty = 1)
+
+# Unbiasedness 
+
+idx_beta0 &lt;- beta1_list == 0
+
+apply(power_mat[!idx_beta0,], 2, min)
+</code></pre>
+  </div></main>
+
+  <footer>
+    <div class="wrap">Econometrics 1 · M1 Econ · ENS de Lyon · 2026–2027 · Slides licensed <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></div>
+  </footer>
+  <script>
+    if (window.hljs) hljs.highlightAll();
+    document.getElementById('copy').addEventListener('click', function () {
+      var btn = this;
+      navigator.clipboard.writeText(document.getElementById('code').innerText).then(function () {
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = 'Copy code'; }, 1500);
+      });
+    });
+  </script>
+</body>
+</html>
